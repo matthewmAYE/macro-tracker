@@ -31,6 +31,10 @@ export default function FoodSearchModal({
   const [meal, setMeal] = useState(initialMeal);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [customForm, setCustomForm] = useState({
+    name: "", per: "100g", servingGrams: "", protein: "", carbs: "", fat: "", fiber: "",
+  });
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -79,6 +83,43 @@ export default function FoodSearchModal({
     setUnit("g");
     setAmount("100");
     setError("");
+    setCreating(false);
+  }
+
+  async function createCustomFood() {
+    setSaving(true);
+    setError("");
+    const res = await fetch("/api/foods", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: customForm.name,
+        per: customForm.per,
+        servingGrams: customForm.per === "serving" ? Number(customForm.servingGrams) : undefined,
+        protein: Number(customForm.protein || 0),
+        carbs: Number(customForm.carbs || 0),
+        fat: Number(customForm.fat || 0),
+        fiber: Number(customForm.fiber || 0),
+      }),
+    });
+    setSaving(false);
+    if (res.ok) {
+      const food: FoodDto = await res.json();
+      setRecents((r) => [food, ...r]);
+      pick(food); // straight to the amount picker so it can be logged now
+    } else {
+      setError((await res.json()).error ?? "Failed to save food");
+    }
+  }
+
+  async function deleteCustomFood(food: FoodDto) {
+    if (!confirm(`Delete "${food.name}"? Past diary entries keep their values.`)) return;
+    const res = await fetch(`/api/foods/${food.id}`, { method: "DELETE" });
+    if (res.ok) {
+      setSelected(null);
+      setResults((r) => r.filter((f) => f.id !== food.id));
+      setRecents((r) => r.filter((f) => f.id !== food.id));
+    }
   }
 
   async function add() {
@@ -116,9 +157,85 @@ export default function FoodSearchModal({
           />
         </div>
 
-        {!selected ? (
+        {creating ? (
+          <div className="space-y-4 p-4">
+            <div className="flex items-start justify-between">
+              <h3 className="text-sm font-semibold">Create custom food</h3>
+              <button onClick={() => { setCreating(false); setError(""); }} className="text-xs text-zinc-400 hover:text-white">
+                ← back
+              </button>
+            </div>
+            <label className="block">
+              <span className="mb-1 block text-xs text-zinc-400">Name</span>
+              <input
+                value={customForm.name}
+                onChange={(e) => setCustomForm({ ...customForm, name: e.target.value })}
+                placeholder="e.g. Mum's protein oats"
+                className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
+              />
+            </label>
+            <div className="flex flex-wrap items-end gap-3">
+              <label className="block">
+                <span className="mb-1 block text-xs text-zinc-400">Macros entered per</span>
+                <select
+                  value={customForm.per}
+                  onChange={(e) => setCustomForm({ ...customForm, per: e.target.value })}
+                  className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm"
+                >
+                  <option value="100g">100 g</option>
+                  <option value="serving">one serving</option>
+                </select>
+              </label>
+              {customForm.per === "serving" && (
+                <label className="block">
+                  <span className="mb-1 block text-xs text-zinc-400">Serving weight (g)</span>
+                  <input
+                    type="number" min="0" step="any"
+                    value={customForm.servingGrams}
+                    onChange={(e) => setCustomForm({ ...customForm, servingGrams: e.target.value })}
+                    className="w-28 rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
+                  />
+                </label>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {(
+                [["protein", "Protein (g)"], ["carbs", "Carbs (g)"], ["fat", "Fat (g)"], ["fiber", "Fiber (g)"]] as const
+              ).map(([key, label]) => (
+                <label key={key} className="block">
+                  <span className="mb-1 block text-xs text-zinc-400">{label}</span>
+                  <input
+                    type="number" min="0" step="any"
+                    value={customForm[key]}
+                    onChange={(e) => setCustomForm({ ...customForm, [key]: e.target.value })}
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
+                  />
+                </label>
+              ))}
+            </div>
+            {error && <p className="text-sm text-red-400">{error}</p>}
+            <button
+              onClick={createCustomFood}
+              disabled={saving || !customForm.name.trim() || (customForm.per === "serving" && !(Number(customForm.servingGrams) > 0))}
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-40"
+            >
+              {saving ? "Saving…" : "Save food"}
+            </button>
+            <p className="text-xs text-zinc-500">
+              Saved foods show up in search and recents, and can be logged in any unit like other foods.
+            </p>
+          </div>
+        ) : !selected ? (
           <div className="min-h-0 flex-1 overflow-y-auto p-2">
-            <p className="px-2 pb-2 text-xs text-zinc-500">{listLabel}</p>
+            <div className="flex items-center justify-between px-2 pb-2">
+              <p className="text-xs text-zinc-500">{listLabel}</p>
+              <button
+                onClick={() => { setCreating(true); setError(""); }}
+                className="text-xs font-medium text-emerald-400 hover:text-emerald-300"
+              >
+                + Create custom food
+              </button>
+            </div>
             {list.map((f) => (
               <button
                 key={f.id}
@@ -141,6 +258,11 @@ export default function FoodSearchModal({
                       avg of {f.sourceCount}
                     </span>
                   )}
+                  {f.isCustom && (
+                    <span className="rounded bg-violet-500/15 px-1.5 py-0.5 text-[10px] font-medium text-violet-300">
+                      custom
+                    </span>
+                  )}
                 </span>
                 <span className="mt-0.5 block text-xs text-zinc-500">
                   per 100 g: {Math.round(f.calories)} kcal · P {fmt(f.protein)} · C {fmt(f.carbs)} · F{" "}
@@ -157,11 +279,19 @@ export default function FoodSearchModal({
                 <p className="text-xs text-zinc-500">
                   {selected.category}
                   {selected.sourceCount > 1 && ` · averaged from ${selected.sourceCount} database entries`}
+                  {selected.isCustom && " · your saved food"}
                 </p>
               </div>
-              <button onClick={() => setSelected(null)} className="text-xs text-zinc-400 hover:text-white">
-                ← back
-              </button>
+              <div className="flex shrink-0 items-center gap-3">
+                {selected.isCustom && (
+                  <button onClick={() => deleteCustomFood(selected)} className="text-xs text-zinc-500 hover:text-red-400">
+                    delete food
+                  </button>
+                )}
+                <button onClick={() => setSelected(null)} className="text-xs text-zinc-400 hover:text-white">
+                  ← back
+                </button>
+              </div>
             </div>
 
             <div className="flex flex-wrap items-end gap-3">

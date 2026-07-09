@@ -25,9 +25,10 @@ export async function GET(req: Request) {
       const nameStarts = tokens.some((t) => f.name.toLowerCase().startsWith(t)) ? 1 : 0;
       const branded = /\b[A-Z][A-Z'&.-]{2,}\b/.test(f.name) ? 1 : 0;
       const multiSource = Math.min(f.sourceCount - 1, 4);
+      const custom = f.isCustom ? 8 : 0; // the user's own foods rank first
       return {
         f,
-        score: wholeWords * 10 + multiSource * 3 + nameStarts * 2 - branded * 6 - f.name.length / 100,
+        score: wholeWords * 10 + custom + multiSource * 3 + nameStarts * 2 - branded * 6 - f.name.length / 100,
       };
     })
     .sort((a, b) => b.score - a.score)

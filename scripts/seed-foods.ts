@@ -222,9 +222,11 @@ async function main() {
     groups.get(item.key)!.push(item);
   }
 
-  await prisma.logEntry.deleteMany({ where: { kind: "food" } });
-  await prisma.portion.deleteMany();
-  await prisma.food.deleteMany();
+  // Re-seeding replaces only USDA-derived rows. User-created custom foods
+  // (and all log entries — they carry macro snapshots) are preserved;
+  // LogEntry.foodId of replaced foods nulls out via onDelete: SetNull.
+  await prisma.portion.deleteMany({ where: { food: { isCustom: false } } });
+  await prisma.food.deleteMany({ where: { isCustom: false } });
 
   const avg = (ns: number[]) => ns.reduce((a, b) => a + b, 0) / ns.length;
   let inserted = 0, merged = 0;

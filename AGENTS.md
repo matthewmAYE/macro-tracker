@@ -41,6 +41,9 @@ SQLite (`dev.db` at repo root, driver adapter `@prisma/adapter-better-sqlite3`).
 - `app/api/*` — route handlers; all macro computation for logged entries
   happens server-side (`lib/entries.ts`), and `LogEntry` stores a macro
   snapshot so history survives food edits. `Plan` is a singleton row (id=1).
+  User-created foods are `Food` rows with `isCustom = true` (created via
+  `POST /api/foods`, per-100g or per-serving input normalized server-side);
+  only these are deletable, and `npm run db:seed` preserves them.
 - `app/page.tsx` — diary + dashboard (client components fetching the API);
   `components/FoodSearchModal.tsx`, `components/QuickAddModal.tsx`;
   `app/plan/page.tsx` — targets editor + Mifflin-St Jeor TDEE suggester.

@@ -15,6 +15,7 @@ model Food {
   searchText  String // lowercased, de-punctuated name used for token search
   category    String
   state       String // "raw" | "cooked" | "other"
+  isCustom    Boolean    @default(false) // user-created; survives re-seeding
   sourceCount Int        @default(1)
   protein     Float
   carbs       Float

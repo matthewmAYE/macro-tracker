@@ -17,11 +17,15 @@ Gaps found in the current 3-dataset USDA seed (SR Legacy + Foundation + FNDDS Su
 
 Some "missing" foods are actually spelling/naming misses: *pomelo* IS seeded as **"Pummelo, raw"**. Add a curated alias map (pomelo→pummelo, garbanzo→chickpea, courgette→zucchini, ...) appended to `Food.searchText` at seed time so colloquial names match. Cheap, high impact — do this before ingesting new sources.
 
-## 3. Saved custom foods
+## 3. Saved custom foods — ✅ shipped (2026-07-09)
 
-Today custom foods are one-off `LogEntry` rows (kind `"custom"`) — not reusable. Rework:
+Implemented: `Food.isCustom` rows created via `POST /api/foods` (macros per
+100 g or per serving + serving weight), searchable with a rank boost, badge in
+the search modal, delete via `DELETE /api/foods/:id` (custom-only, 403
+otherwise). The seed pipeline preserves custom foods when re-seeding. The
+unnamed quick-add flow is unchanged.
 
-- Let the user create a **saved custom food**: name + per-100g macros (or per-serving with a serving weight), stored as a `Food` row (add something like `Food.custom = true`, `sourceCount = 0` or a `source` discriminator).
-- Saved custom foods appear in search and recents like any other food, support units/amounts, and can be edited/deleted from a small management UI.
-- Keep the existing quick-add (unnamed, one-off) flow as-is.
-- Migration consideration: existing `kind="custom"` log entries stay valid snapshots; no backfill needed.
+Remaining follow-ups:
+- Edit UI for existing custom foods (PATCH endpoint + form).
+- Custom portion units (e.g. "1 scoop = 31 g") so volume-style logging works
+  for user foods.

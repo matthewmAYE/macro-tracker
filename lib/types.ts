@@ -7,6 +7,7 @@ export type FoodDto = {
   name: string;
   category: string;
   state: string;
+  isCustom: boolean;
   sourceCount: number;
   protein: number;
   carbs: number;

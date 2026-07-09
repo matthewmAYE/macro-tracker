@@ -57,3 +57,9 @@ export function scaleMacros(per100g: Macros, grams: number): Macros & { calories
 export function round1(n: number): number {
   return Math.round(n * 10) / 10;
 }
+
+// Canonical text normalization used for Food.searchText (must match how the
+// seed pipeline and the search route tokenize).
+export function normalizeText(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
+}

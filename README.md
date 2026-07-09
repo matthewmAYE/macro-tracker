@@ -9,6 +9,7 @@ Foods come prestored from three USDA FoodData Central datasets (SR Legacy, Found
 - **Plan** — set daily calorie, protein, carb, fat, and fiber targets (with an optional TDEE-based suggestion).
 - **Diary** — search 12,000+ unified foods, pick a serving unit (g, oz, lb, and tsp/tbsp/cup where the food has a defined measure weight) and amount, and log to breakfast/lunch/dinner/snacks.
 - **Quick add macros** — enter fat/carbs/protein/fiber directly; calories and net carbs are computed and added to the day.
+- **Saved custom foods** — create your own foods (macros per 100 g or per serving); they're stored in the database, searchable, and loggable in any unit like built-in foods.
 - **Dashboard** — consumed vs. remaining for calories and every macro, including net carbs and fiber.
 
 ## Setup
@@ -40,4 +41,4 @@ See `.claude/roadmap.md` for detail.
 
 - **Expand food coverage from more sources.** Some common varieties are missing as distinct entries (e.g. cherry tomatoes — only generic "Tomatoes, red, ripe, raw" exists). Candidates: Open Food Facts, FDC Branded Foods, AUSNUT/other national databases — merged through the same averaging pipeline.
 - **Search synonyms/aliases.** Some foods exist but under unfamiliar names (pomelo is seeded as "Pummelo, raw"). Add an alias layer to `searchText` so common spellings and colloquial names match.
-- **Saved custom foods.** Rework custom foods so they are saved as reusable `Food` rows (per-100g macros + optional portions) that can be searched and re-added as diary entries, instead of today's one-off custom log entries.
+- **Custom food management.** Creation/deletion is done; add an edit UI and custom portion units (e.g. "1 scoop").
