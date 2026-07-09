@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// One unified food item. Nutrient values are per 100 g, averaged across all
+// source database entries that were merged into this row (sourceCount of them).
+model Food {
+  id          Int        @id @default(autoincrement())
+  name        String
+  searchText  String // lowercased, de-punctuated name used for token search
+  category    String
+  state       String // "raw" | "cooked" | "other"
+  sourceCount Int        @default(1)
+  protein     Float
+  carbs       Float
+  fat         Float
+  fiber       Float
+  calories    Float // 4*protein + 4*(carbs - fiber) + 9*fat
+  portions    Portion[]
+  logEntries  LogEntry[]
+
+  @@index([searchText])
+}
+
+// Gram weight of one household measure of a food (only present where the
+// source data defines it, e.g. 1 tbsp of peanut butter = 16 g).
+model Portion {
+  id         Int    @id @default(autoincrement())
+  foodId     Int
+  food       Food   @relation(fields: [foodId], references: [id], onDelete: Cascade)
+  unit       String // "tsp" | "tbsp" | "cup"
+  gramWeight Float
+
+  @@unique([foodId, unit])
+}
+
+// Single-user daily targets. Exactly one row (id = 1).
+model Plan {
+  id       Int   @id @default(1)
+  calories Float
+  protein  Float
+  carbs    Float
+  fat      Float
+  fiber    Float
+}
+
+// One logged item in the diary. Macro fields are the computed totals for the
+// logged amount (not per 100 g), so history is immune to later Food edits.
+model LogEntry {
+  id        Int      @id @default(autoincrement())
+  date      String // YYYY-MM-DD (local)
+  meal      String // "breakfast" | "lunch" | "dinner" | "snacks"
+  kind      String // "food" | "quick" | "custom"
+  foodId    Int?
+  food      Food?    @relation(fields: [foodId], references: [id], onDelete: SetNull)
+  name      String
+  unit      String? // "g" | "oz" | "lb" | "tsp" | "tbsp" | "cup"
+  amount    Float?
+  grams     Float?
+  protein   Float
+  carbs     Float
+  fat       Float
+  fiber     Float
+  calories  Float
+  createdAt DateTime @default(now())
+
+  @@index([date])
+}
