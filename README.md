@@ -9,7 +9,7 @@ Foods come prestored from three USDA FoodData Central datasets (SR Legacy, Found
 - **Plan** — set daily calorie, protein, carb, fat, and fiber targets (with an optional TDEE-based suggestion).
 - **Diary** — search 12,000+ unified foods, pick a serving unit (g, oz, lb, and tsp/tbsp/cup where the food has a defined measure weight) and amount, and log to breakfast/lunch/dinner/snacks.
 - **Quick add macros** — enter fat/carbs/protein/fiber directly; calories and net carbs are computed and added to the day.
-- **Saved custom foods** — create your own foods (macros per 100 g or per serving); they're stored in the database, searchable, and loggable in any unit like built-in foods.
+- **Saved custom foods** — create, edit, or delete your own foods (macros per 100 g or per serving); they're stored in the database, searchable, and loggable in any unit like built-in foods.
 - **Dashboard** — consumed vs. remaining for calories and every macro, including net carbs and fiber.
 
 ## Setup
@@ -40,5 +40,5 @@ npm test
 See `.claude/roadmap.md` for detail.
 
 - **Expand food coverage from more sources.** Some common varieties are missing as distinct entries (e.g. cherry tomatoes — only generic "Tomatoes, red, ripe, raw" exists). Candidates: Open Food Facts, FDC Branded Foods, AUSNUT/other national databases — merged through the same averaging pipeline.
-- **Search synonyms/aliases.** Some foods exist but under unfamiliar names (pomelo is seeded as "Pummelo, raw"). Add an alias layer to `searchText` so common spellings and colloquial names match.
-- **Custom food management.** Creation/deletion is done; add an edit UI and custom portion units (e.g. "1 scoop").
+- **Search synonyms/aliases — ✅ shipped.** A curated alias layer (`scripts/aliases.ts`) appends colloquial names to `searchText` at seed time (pomelo→pummelo, garbanzo↔chickpea, courgette→zucchini, and ~30 specific beef cuts like top round/london broil, fore shank/osso buco, top sirloin/coulotte — applied equally to raw and cooked rows).
+- **Custom food management.** Creation, editing (`PATCH /api/foods/:id`), and deletion are done. Custom portion units (e.g. "1 scoop") remain.

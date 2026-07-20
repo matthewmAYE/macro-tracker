@@ -32,6 +32,7 @@ export default function FoodSearchModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [customForm, setCustomForm] = useState({
     name: "", per: "100g", servingGrams: "", protein: "", carbs: "", fat: "", fiber: "",
   });
@@ -112,6 +113,51 @@ export default function FoodSearchModal({
     }
   }
 
+  function startEdit(food: FoodDto) {
+    setCustomForm({
+      name: food.name,
+      per: "100g",
+      servingGrams: "",
+      protein: String(food.protein),
+      carbs: String(food.carbs),
+      fat: String(food.fat),
+      fiber: String(food.fiber),
+    });
+    setEditingId(food.id);
+    setError("");
+    setCreating(true);
+  }
+
+  async function updateCustomFood() {
+    if (editingId == null) return;
+    setSaving(true);
+    setError("");
+    const res = await fetch(`/api/foods/${editingId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: customForm.name,
+        per: customForm.per,
+        servingGrams: customForm.per === "serving" ? Number(customForm.servingGrams) : undefined,
+        protein: Number(customForm.protein || 0),
+        carbs: Number(customForm.carbs || 0),
+        fat: Number(customForm.fat || 0),
+        fiber: Number(customForm.fiber || 0),
+      }),
+    });
+    setSaving(false);
+    if (res.ok) {
+      const food: FoodDto = await res.json();
+      setRecents((r) => r.map((f) => (f.id === food.id ? food : f)));
+      setResults((r) => r.map((f) => (f.id === food.id ? food : f)));
+      setCreating(false);
+      setEditingId(null);
+      pick(food);
+    } else {
+      setError((await res.json()).error ?? "Failed to update food");
+    }
+  }
+
   async function deleteCustomFood(food: FoodDto) {
     if (!confirm(`Delete "${food.name}"? Past diary entries keep their values.`)) return;
     const res = await fetch(`/api/foods/${food.id}`, { method: "DELETE" });
@@ -160,8 +206,11 @@ export default function FoodSearchModal({
         {creating ? (
           <div className="space-y-4 p-4">
             <div className="flex items-start justify-between">
-              <h3 className="text-sm font-semibold">Create custom food</h3>
-              <button onClick={() => { setCreating(false); setError(""); }} className="text-xs text-zinc-400 hover:text-white">
+              <h3 className="text-sm font-semibold">{editingId != null ? "Edit custom food" : "Create custom food"}</h3>
+              <button
+                onClick={() => { setCreating(false); setEditingId(null); setError(""); }}
+                className="text-xs text-zinc-400 hover:text-white"
+              >
                 ← back
               </button>
             </div>
@@ -215,11 +264,11 @@ export default function FoodSearchModal({
             </div>
             {error && <p className="text-sm text-red-400">{error}</p>}
             <button
-              onClick={createCustomFood}
+              onClick={editingId != null ? updateCustomFood : createCustomFood}
               disabled={saving || !customForm.name.trim() || (customForm.per === "serving" && !(Number(customForm.servingGrams) > 0))}
               className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-40"
             >
-              {saving ? "Saving…" : "Save food"}
+              {saving ? "Saving…" : editingId != null ? "Save changes" : "Save food"}
             </button>
             <p className="text-xs text-zinc-500">
               Saved foods show up in search and recents, and can be logged in any unit like other foods.
@@ -230,7 +279,12 @@ export default function FoodSearchModal({
             <div className="flex items-center justify-between px-2 pb-2">
               <p className="text-xs text-zinc-500">{listLabel}</p>
               <button
-                onClick={() => { setCreating(true); setError(""); }}
+                onClick={() => {
+                  setCustomForm({ name: "", per: "100g", servingGrams: "", protein: "", carbs: "", fat: "", fiber: "" });
+                  setEditingId(null);
+                  setCreating(true);
+                  setError("");
+                }}
                 className="text-xs font-medium text-emerald-400 hover:text-emerald-300"
               >
                 + Create custom food
@@ -284,9 +338,14 @@ export default function FoodSearchModal({
               </div>
               <div className="flex shrink-0 items-center gap-3">
                 {selected.isCustom && (
-                  <button onClick={() => deleteCustomFood(selected)} className="text-xs text-zinc-500 hover:text-red-400">
-                    delete food
-                  </button>
+                  <>
+                    <button onClick={() => startEdit(selected)} className="text-xs text-zinc-500 hover:text-emerald-400">
+                      edit food
+                    </button>
+                    <button onClick={() => deleteCustomFood(selected)} className="text-xs text-zinc-500 hover:text-red-400">
+                      delete food
+                    </button>
+                  </>
                 )}
                 <button onClick={() => setSelected(null)} className="text-xs text-zinc-400 hover:text-white">
                   ← back

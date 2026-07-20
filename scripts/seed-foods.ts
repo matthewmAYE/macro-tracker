@@ -9,6 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { prisma } from "../lib/prisma";
 import { caloriesFromMacros } from "../lib/nutrition";
+import { expandAliases } from "./aliases";
 
 const DATA_DIR = path.join(process.cwd(), "data", "fdc");
 
@@ -245,9 +246,15 @@ async function main() {
       .map((m) => m.kept.join(", "))
       .sort((a, b) => a.length - b.length)[0];
     const tokens = new Set<string>();
-    for (const m of members) for (const t of normalize(m.food.desc).split(" ")) tokens.add(t);
+    const memberDescs = members.map((m) => normalize(m.food.desc));
+    for (const desc of memberDescs) for (const t of desc.split(" ")) tokens.add(t);
     const state = members.map((m) => m.state).find((s) => s !== "other") ?? "other";
     if (state !== "other") tokens.add(state === "cooked" ? "cooked" : "raw");
+    // Append curated colloquial synonyms (pomelo→pummelo, london broil→top
+    // round, ribeye→delmonico, …) so common names hit USDA-canonical rows.
+    // Attaches to raw and cooked rows equally — state stays separate, so
+    // "cooked ribeye" still resolves to the cooked-weight macros row.
+    for (const t of expandAliases(tokens, memberDescs)) tokens.add(t);
 
     const portionAgg = new Map<string, number[]>();
     for (const m of members)
