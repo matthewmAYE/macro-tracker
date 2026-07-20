@@ -26,6 +26,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/plan" className="text-sm text-zinc-300 hover:text-white">
               Plan
             </Link>
+            <Link href="/timer" className="text-sm text-zinc-300 hover:text-white">
+              Timer
+            </Link>
           </nav>
         </header>
         <main className="mx-auto max-w-3xl px-4 py-6">{children}</main>
