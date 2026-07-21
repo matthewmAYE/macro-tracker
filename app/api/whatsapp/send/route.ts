@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getWhatsAppStatus, sendWhatsAppMessage } from "@/lib/whatsapp";
 import { formatTimerMessage } from "@/lib/timer";
+import { appendEntry } from "@/lib/log";
 
 const TIME_RE = /^\d{2}:\d{2}$/;
 
@@ -26,11 +27,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "time must be HH:MM format" }, { status: 400 });
   }
 
-  const message = formatTimerMessage(time, seconds);
+  const entry = formatTimerMessage(time, seconds);
+  const message = appendEntry(entry);
 
   try {
     await sendWhatsAppMessage(message);
-    return NextResponse.json({ ok: true, message });
+    return NextResponse.json({ ok: true, message: entry });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: msg }, { status: 500 });

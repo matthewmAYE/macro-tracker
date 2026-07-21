@@ -2,10 +2,15 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockGetStatus = vi.fn();
 const mockSend = vi.fn();
+const mockAppendEntry = vi.fn();
 
 vi.mock("@/lib/whatsapp", () => ({
   getWhatsAppStatus: mockGetStatus,
   sendWhatsAppMessage: mockSend,
+}));
+
+vi.mock("@/lib/log", () => ({
+  appendEntry: mockAppendEntry,
 }));
 
 async function getRoute() {
@@ -24,6 +29,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockGetStatus.mockReturnValue({ status: "ready" });
   mockSend.mockResolvedValue(undefined);
+  mockAppendEntry.mockImplementation((entry: string) => `FULL LOG\n${entry}`);
 });
 
 describe("POST /api/whatsapp/send", () => {
@@ -64,7 +70,8 @@ describe("POST /api/whatsapp/send", () => {
     const { POST } = await getRoute();
     const res = await POST(makeRequest({ seconds: 47, time: "14:35" }));
     expect(res.status).toBe(200);
-    expect(mockSend).toHaveBeenCalledWith("14:35, 47s");
+    expect(mockAppendEntry).toHaveBeenCalledWith("14:35, 47s");
+    expect(mockSend).toHaveBeenCalledWith("FULL LOG\n14:35, 47s");
     const body = await res.json();
     expect(body.ok).toBe(true);
     expect(body.message).toBe("14:35, 47s");
