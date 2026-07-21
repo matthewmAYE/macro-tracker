@@ -7,6 +7,7 @@ interface WaState {
   status: WaStatus;
   qr?: string;
   client?: Client;
+  seenChats: Map<string, string>; // chatId -> name or last-message preview
 }
 
 // Global guard so HMR in Next.js dev mode doesn't spawn a new Puppeteer
@@ -14,7 +15,7 @@ interface WaState {
 const g = global as typeof globalThis & { __wa?: WaState };
 
 function state(): WaState {
-  if (!g.__wa) g.__wa = { status: "idle" };
+  if (!g.__wa) g.__wa = { status: "idle", seenChats: new Map() };
   return g.__wa;
 }
 
@@ -53,6 +54,10 @@ export function initWhatsApp(): void {
     s.qr = undefined;
   });
 
+  client.on("message", (msg: { from: string; body: string }) => {
+    s.seenChats.set(msg.from, msg.body?.slice(0, 40) ?? "");
+  });
+
   client.on("disconnected", () => {
     s.status = "disconnected";
     s.client = undefined;
@@ -71,6 +76,11 @@ export async function sendWhatsAppMessage(text: string): Promise<void> {
   const chatId = process.env.WHATSAPP_TARGET_CHAT;
   if (!chatId) throw new Error("WHATSAPP_TARGET_CHAT is not configured");
   await s.client.sendMessage(chatId, text);
+}
+
+export function getSeenChats(): { id: string; preview: string }[] {
+  const s = state();
+  return Array.from(s.seenChats.entries()).map(([id, preview]) => ({ id, preview }));
 }
 
 export async function getWhatsAppChats(): Promise<{ id: string; name: string }[]> {
