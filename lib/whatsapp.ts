@@ -54,9 +54,16 @@ export function initWhatsApp(): void {
     s.qr = undefined;
   });
 
-  client.on("message", (msg: { from: string; body: string }) => {
-    s.seenChats.set(msg.from, msg.body?.slice(0, 40) ?? "");
-  });
+  // Track chat IDs from both received and sent messages.
+  // "message" fires for received; "message_create" fires for all (including sent-by-us).
+  // For sent messages fromMe=true so the group ID is in msg.to, not msg.from.
+  const trackChat = (msg: { from: string; to: string; body: string; fromMe: boolean }) => {
+    const chatId = msg.fromMe ? msg.to : msg.from;
+    s.seenChats.set(chatId, msg.body?.slice(0, 40) ?? "");
+    console.log(`[WA] chat id: ${chatId}`);
+  };
+  client.on("message", trackChat);
+  client.on("message_create", trackChat);
 
   client.on("disconnected", () => {
     s.status = "disconnected";
