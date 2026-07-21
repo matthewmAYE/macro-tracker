@@ -47,5 +47,8 @@ dev.db
 dev.db-journal
 /data/fdc/
 
+# whatsapp-web.js session (contains auth credentials — never commit)
+/whatsapp-session/
+
 # env (contains only local DATABASE_URL for now)
 .env
